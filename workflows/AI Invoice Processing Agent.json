@@ -1,0 +1,991 @@
+{
+  "name": "AI Invoice Processing Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1840,
+        384
+      ],
+      "id": "b5318f71-cfb2-4156-b558-fc01e7b4011d",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmIWrxVDLg7tD6Ji",
+          "name": "Ziv_Google"
+        }
+      },
+      "notes": "Triggers the workflow when a new vendor email arrives in the inbox"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      email_body: `Hi ${$input.first().json.output.vendor},\n\nThanks for sending the invoice. It looks like the PO number is missing.\nCould you please resend the invoice with the PO number included?\n\nThank you!`\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        208
+      ],
+      "id": "204b3820-3e2b-4e44-9f73-7991f3154113",
+      "name": "Build Reply – Missing PO",
+      "notes": "Builds an automated response notifying the vendor that the PO number is missing and required for processing"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        208
+      ],
+      "id": "1dc9e667-8840-435d-9061-af07f4b4915a",
+      "name": "Reply to Vendor",
+      "webhookId": "7bc348b9-7545-4f89-8ee7-70881a10f096",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmIWrxVDLg7tD6Ji",
+          "name": "Ziv_Google"
+        }
+      },
+      "notes": "Sends the composed email reply back to the vendor"
+    },
+    {
+      "parameters": {
+        "content": "## creating an AP invoice",
+        "height": 128,
+        "width": 160
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1392,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "b867d7da-ec25-4f18-896e-978c9e2edac6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mTPdFqpCC6-2RXVoXJuvVbNbc1a7_t6Hw-EuZ6NVtwY",
+          "mode": "list",
+          "cachedResultName": "NetSuite_Open_POs__mock__preview_",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTPdFqpCC6-2RXVoXJuvVbNbc1a7_t6Hw-EuZ6NVtwY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1448666165,
+          "mode": "list",
+          "cachedResultName": "NetSuite_Open_POs__mock__preview_",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTPdFqpCC6-2RXVoXJuvVbNbc1a7_t6Hw-EuZ6NVtwY/edit#gid=1448666165"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "tranid",
+              "lookupValue": "={{ $('Information Extractor').item.json.output.po_number }}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        480
+      ],
+      "id": "34e237d7-875e-43e8-a7f1-95dcfb11d011",
+      "name": "Get NetSuite PO Line",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UEN9UezGOXTtd11M",
+          "name": "Ziv_Google-sheet"
+        }
+      },
+      "notes": "Fetches the matching PO line from NetSuite data based on the PO number in the invoice"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8dd0c29d-3ba3-484c-86ad-17fdc7cd1205",
+              "leftValue": "={{ $json.currency }}",
+              "rightValue": "={{ $('Information Extractor').item.json.output.currency }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        480
+      ],
+      "id": "2611746c-0323-4faa-88ed-8dfa695707bb",
+      "name": "?currency match",
+      "notes": "Checks whether the invoice currency matches the currency stored in the NetSuite PO line"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "enPklGzFQZ0cGYQc",
+          "mode": "list",
+          "cachedResultName": "Daily Rate",
+          "cachedResultUrl": "/projects/Hqw3eUIpDJoPku1A/datatables/enPklGzFQZ0cGYQc"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        544,
+        576
+      ],
+      "id": "167168d0-b985-48be-9c8c-c4140e19b8d7",
+      "name": "Get Daily Currency Rates",
+      "notes": "Fetches the daily EUR and ILS exchange rates from the Data Table"
+    },
+    {
+      "parameters": {
+        "jsCode": "// from invoice\nconst invoiceAmount = $('Information Extractor').first().json.output.amount;\nconst invoiceCurrency = $('Information Extractor').first().json.output.currency;\n\n// from NetSuite\nconst netSuiteAmount = $('Get NetSuite PO Line').first().json.po_remaining;\nconst netSuiteCurrency = $('Get NetSuite PO Line').first().json.currency;\n\n// rate variables (from Daily Rate table)\nconst rows = $input.all();\nconst ilsRate = rows[0]?.json.rate || null;\nconst eurRate = rows[1]?.json.rate || null;\n\n// converts values to the base currency (USD)\nfunction toUSD(amount, currency) {\n  if (currency === \"USD\") return amount;\n  if (currency === \"EUR\") return amount / eurRate;\n  if (currency === \"ILS\") return amount / ilsRate;\n  throw new Error(\"Unknown currency: \" + currency);\n}\n\n// Perform the actual conversion\nconst invoiceUSD = Number(toUSD(invoiceAmount, invoiceCurrency).toFixed(2));\nconst netSuiteUSD = Number(toUSD(netSuiteAmount, netSuiteCurrency).toFixed(2));\n\nreturn [\n  {\n    invoiceUSD,\n    netSuiteUSD\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        576
+      ],
+      "id": "c31c5f17-ac75-4996-8631-55bce8603605",
+      "name": "Convert Amounts to USD",
+      "notes": "Converts both invoice and NetSuite PO amounts into USD using the fetched exchange rates"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "231ce8a2-9877-4fb3-ae0e-04428a3e5a19",
+              "name": "inovice_amount",
+              "value": "={{ $json.invoiceUSD }}",
+              "type": "number"
+            },
+            {
+              "id": "424ad37c-c517-4d32-b692-b3f87f350aa1",
+              "name": "netSuite_remaining",
+              "value": "={{ $json.netSuiteUSD }}",
+              "type": "number"
+            },
+            {
+              "id": "990616e4-4341-4f7b-a4be-82c7914e0011",
+              "name": "currencyConverted",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        576
+      ],
+      "id": "43e68649-e837-4bce-972b-337cac9ea8f5",
+      "name": "Save Converted Values",
+      "notes": "Stores the converted USD values for comparison and validation"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "231ce8a2-9877-4fb3-ae0e-04428a3e5a19",
+              "name": "inovice_amount",
+              "value": "={{ $('Mock Data - Valid').item.json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "424ad37c-c517-4d32-b692-b3f87f350aa1",
+              "name": "netSuite_remaining",
+              "value": "={{ $('Get NetSuite PO Line').item.json.po_remaining }}",
+              "type": "number"
+            },
+            {
+              "id": "a63399b7-7e3c-4996-bd3e-cb9a485aa5ea",
+              "name": "currencyConverted",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        384
+      ],
+      "id": "e98d59c8-9917-4448-aad1-55a88a65519a",
+      "name": "Save Original Values",
+      "notes": "Stores the original invoice and NetSuite PO amounts before conversion"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "adb22711-9004-4160-be3a-9a967363f2a0",
+              "leftValue": "={{ $json.inovice_amount }}",
+              "rightValue": "={{ $json.netSuite_remaining }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        480
+      ],
+      "id": "b48f3e4f-9456-4679-9716-b0f455fba4a0",
+      "name": "?balance",
+      "notes": "Checks whether the PO exists but the remaining balance is too low, in order to return the shortfall amount if needed"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.full_markdown_report }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        352
+      ],
+      "id": "e1a72047-3771-4562-8c56-abc0387da0b6",
+      "name": "Markdown",
+      "notes": "Converts the generated Markdown summary into HTML format for email delivery or UI display"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract markdown variables\nconst extracted = $('Information Extractor').first().json.output;\nconst converted = $('Save Converted Values').first().json;\nconst netSuite = $('Get NetSuite PO Line').first().json;\nconst POstatus = $input.first().json.final_decision;\n\nconst isConverted = converted.currencyConverted;\n\n// Original values\nconst originalAmount = extracted.amount;\nconst originalCurrency = extracted.currency;\nconst netSuiteRemainingOriginal = netSuite.po_remaining;\nconst netSuiteCurrency = netSuite.currency;\n\n// Converted values\nconst convertedInvoiceAmount = isConverted ? converted.invoice_amount : null;\nconst convertedRemainingAmount = isConverted ? converted.netSuite_remaining : null;\n\n// Build Markdown\nconst markdownSummary = \n`# INVOICE PROCESSING SUMMARY (${POstatus.status})\n\n## Details Extracted from Email\n* **Vendor:** **${extracted.vendor}**\n* **PO Number:** ${extracted.po_number}\n* **Intent:** ${extracted.intent}\n\n## Financial Processing Details\n### Original Values\n* **Invoice Amount:** ${originalAmount} ${originalCurrency}\n* **NetSuite Remaining Balance:** ${netSuiteRemainingOriginal} ${netSuiteCurrency}\n\n${\n  isConverted\n  ? \n  `### Converted Values  \n* **Currency Conversion Performed:** **YES**  \n* **Converted Invoice Amount (USD):** ${convertedInvoiceAmount}  \n* **Converted Remaining Balance (USD):** ${convertedRemainingAmount}`\n  :\n  `### Converted Values  \n* **Currency Conversion Performed:** No (Currency matched: ${originalCurrency})`\n}\n\n## Final Decision & Action Taken\n* **Final Status:** ${POstatus.status}\n* **Action Taken:** ${POstatus.action_taken}\n* **Decision Message:** ${extracted.decision_message}\n`;\n\nreturn [\n  {\n    json: {\n      \"full_markdown_report\": markdownSummary\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        496
+      ],
+      "id": "9ff96006-5c9b-4636-acbc-eb526e49ce5c",
+      "name": "markdown summery - valid",
+      "notes": "Creates a human-readable Markdown report for valid PO scenarios, based on extracted and converted values"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Set markdown variables\nconst extracted = $('Information Extractor').first().json.output;\nconst replyNode = $('Build Reply – Missing PO').first().json;\n\n// Create markdown string\nconst markdownSummary = \n`# INVOICE PROCESSING SUMMARY (PO Missing)\n\n## Details Extracted from Email\n* **Vendor:** **${extracted.vendor}**\n* **Intent:** ${extracted.intent}\n\n## Final Decision & Action Taken\n* **Final Status:** PO MISSING\n* **Action Taken:** VENDOR REPLY\n* **Reply Email:** ${replyNode.email_body}\n`;\n\nreturn [\n  {\n    json: {\n      \"full_markdown_report\": markdownSummary\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        208
+      ],
+      "id": "e32b8111-09fa-4229-9f89-15bd9294d396",
+      "name": "markdown summery - missing PO",
+      "notes": "Creates a human-readable Markdown report for missing PO scenarios, including the vendor reply instructions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data from previous nodes\nconst extracted = $('Information Extractor').first().json.output;\nconst converted = $('Save Converted Values').first().json;\nconst netSuite = $('Get NetSuite PO Line').first().json;\nconst POstatus = $input.first().json.output;\n\n// Original invoice details\nconst originalAmount = extracted.amount;\nconst originalCurrency = extracted.currency;\n\n// NetSuite remaining\nconst netSuiteRemainingOriginal = netSuite.po_remaining;\nconst netSuiteCurrency = netSuite.currency;\n\n// Whether a currency conversion was performed\nconst isConverted = converted.currencyConverted;\n\n// Determine converted invoice and balance values\nconst convertedInvoiceAmount = isConverted ? converted.invoice_amount : null;\nconst convertedRemainingAmount = isConverted ? converted.netSuite_remaining : null;\n\n// Build final JSON output\nreturn [\n  {\n    json: {\n      \"transaction_id\": \"PO-VALID-PROCESSED\",\n\n      \"extracted_fields\": {\n        \"vendor\": extracted.vendor,\n        \"po_number\": extracted.po_number,\n        \"invoice_amount_original\": `${originalAmount} ${originalCurrency}`,\n        \"intent\": extracted.intent\n      },\n\n      \"processing_details\": {\n        \"currency_conversion_performed\": isConverted,\n        \"original_values\": {\n          \"invoice_amount\": `${originalAmount} ${originalCurrency}`,\n          \"netsuite_remaining\": `${netSuiteRemainingOriginal} ${netSuiteCurrency}`\n        },\n        \"converted_values\": isConverted ? {\n          \"invoice_amount_converted\": convertedInvoiceAmount,\n          \"netsuite_remaining_converted\": convertedRemainingAmount\n        } : null,\n\n        \"netsuite_po_status\": \"FOUND\",\n        \"po_balance_sufficient\": true\n      },\n\n      \"final_decision\": {\n        \"status\": POstatus.status,\n        \"action_taken\": POstatus.action_taken\n      },\n\n      \"suggested_reply\": {\n        \"text\": extracted.decision_message\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        496
+      ],
+      "id": "6e3ebb4b-60df-4f42-a024-41fee5bcbb99",
+      "name": "json summery - valid",
+      "notes": "Generates the final JSON summary for valid PO cases, including extracted fields and processing details"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $('Information Extractor').first().json.output;\n\nreturn [\n  {\n    json: {\n      \"transaction_id\": \"PO_MISSING\",\n\n      \"extracted_fields\": {\n        \"vendor_name\": extracted.vendor,\n        \"po_number_sent\": \"\",\n        \"invoice_amount_original\": extracted.amount,\n        \"currency_original\": extracted.currency,\n        \"intent\": extracted.intent\n      },\n\n      // No processing_details needed here because no PO validation or currency actions occur\n\n      \"final_decision\": {\n        \"status\": \"PO_MISSING\",\n        \"action_taken\": \"VENDOR_REPLY\"\n      },\n\n      \"suggested_reply\": {\n        \"text\": extracted.decision_message\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        208
+      ],
+      "id": "cc6ab81a-7e38-4707-a99e-cba75d56ee16",
+      "name": "json summery - missing PO",
+      "notes": "Generates the final JSON summary for missing PO cases, including extracted fields and decision outcome"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1456,
+        384
+      ],
+      "id": "cb040c38-a7a2-41a5-8e9c-884a0c779867",
+      "name": "Wait",
+      "webhookId": "f1b1d7cd-7440-436a-b6f4-ca632c6876b9",
+      "notes": "Pauses the workflow for 5 sec to allow the external system time to process the uploaded file"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.eu.llamaindex.ai/api/v1/parsing/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer LLAMAPARSE_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "attachment_0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1632,
+        384
+      ],
+      "id": "0bc79aeb-3677-4019-9822-f9f8e1a84fd5",
+      "name": "Upload",
+      "notes": "Uploads the email content or attachment to the processing API for extraction"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.eu.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer LLAMAPARSE_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1264,
+        384
+      ],
+      "id": "17fcc870-f429-49ba-95cb-b2a096714cee",
+      "name": "Status",
+      "notes": "Checks the processing status of the uploaded document"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "SUCCESS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a881c1d1-d673-441d-b49f-bd9e80bb6547"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SUCCESS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "56160d0f-a4d3-4ca5-9bc0-30dd9b246110",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "PENDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PENDING"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -1056,
+        384
+      ],
+      "id": "3c71c6fe-95c7-45f7-bc2a-5214bb138656",
+      "name": "Switch",
+      "notes": "Routes the workflow based on the document processing status (SUCCESS vs. PENDING)"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.eu.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}/result/markdown",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer LLAMAPARSE_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -832,
+        368
+      ],
+      "id": "dd776280-a596-417c-8633-7b01e8491e6e",
+      "name": "Get",
+      "notes": "Retrieves the processed document results once the external service has finished extraction"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "vendor",
+              "description": "The legal name of the company or entity that issued the invoice",
+              "required": true
+            },
+            {
+              "name": "po_number",
+              "description": "The Purchase Order (PO) number associated with this invoice. Return an empty string if not found",
+              "required": true
+            },
+            {
+              "name": "amount",
+              "type": "number",
+              "description": "The total final amount of the invoice before tax",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "description": "The currency of the amount (e.g., USD, EUR, ILS)",
+              "required": true
+            },
+            {
+              "name": "status",
+              "description": "Determine the status: 'ready' if all required fields are present; 'missing_po' if PO is missing",
+              "required": true
+            },
+            {
+              "name": "intent",
+              "description": "The purpose of the document. Should be \"Invoice Submission\"",
+              "required": true
+            },
+            {
+              "name": "decision_message",
+              "description": "Write a short, clear, professional message (one sentence) explaining why the invoice cannot be processed.  If status = \"missing_po\", say briefly that the PO number is missing and processing cannot continue without it. Do not repeat details or include extra explanations",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -624,
+        368
+      ],
+      "id": "db0c9123-2ef1-40ec-8f18-c29f5f7df983",
+      "name": "Information Extractor",
+      "notes": "Generates structured extraction and reasoning from the processed document content"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        528
+      ],
+      "id": "73a21065-ae11-488d-957d-f097d6ef41de",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "RvlLwAYz4f79RDKm",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "690fdc0c-48a3-4330-869f-0e763f81d4ca",
+              "name": "output.status",
+              "value": "PO VALID PROCESSED",
+              "type": "string"
+            },
+            {
+              "id": "bd4fafad-f5b9-4a3e-9bd8-31daec15e1e8",
+              "name": "output.action_taken",
+              "value": "AP Invoice created",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        496
+      ],
+      "id": "ecbc73fb-6066-496d-8925-bd072438b79b",
+      "name": "Set Final PO Status",
+      "notes": "Sets the final processing status after all validations are completed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "53990d08-d96e-46ba-bf88-220c071b3c0b",
+              "leftValue": "={{ $json.output.status }}",
+              "rightValue": "missing_po",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        368
+      ],
+      "id": "1824f400-5ced-48da-9f1f-412ce995f18f",
+      "name": "?Missing PO",
+      "notes": "Evaluates whether the extracted PO status indicates a missing PO and routes the workflow accordingly"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reply – Missing PO": {
+      "main": [
+        [
+          {
+            "node": "Reply to Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get NetSuite PO Line": {
+      "main": [
+        [
+          {
+            "node": "?currency match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "?currency match": {
+      "main": [
+        [
+          {
+            "node": "Save Original Values",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Daily Currency Rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Daily Currency Rates": {
+      "main": [
+        [
+          {
+            "node": "Convert Amounts to USD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Amounts to USD": {
+      "main": [
+        [
+          {
+            "node": "Save Converted Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Converted Values": {
+      "main": [
+        [
+          {
+            "node": "?balance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Original Values": {
+      "main": [
+        [
+          {
+            "node": "?balance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "?balance": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set Final PO Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to Vendor": {
+      "main": [
+        [
+          {
+            "node": "json summery - missing PO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "markdown summery - valid": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "markdown summery - missing PO": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "json summery - valid": {
+      "main": [
+        [
+          {
+            "node": "markdown summery - valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "json summery - missing PO": {
+      "main": [
+        [
+          {
+            "node": "markdown summery - missing PO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "?Missing PO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Final PO Status": {
+      "main": [
+        [
+          {
+            "node": "json summery - valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "?Missing PO": {
+      "main": [
+        [
+          {
+            "node": "Build Reply – Missing PO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get NetSuite PO Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "25156437-985d-4b5a-9656-48abdf9f3862",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8dc405cc3dc99b7ad1353da408649960d31f112a95d4603a1d15f6bc56a42de0"
+  },
+  "id": "u3VP51uL196myWzQ",
+  "tags": []
+}

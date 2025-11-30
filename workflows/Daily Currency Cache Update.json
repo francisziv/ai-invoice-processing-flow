@@ -1,0 +1,207 @@
+{
+  "name": "Daily Currency Cache Update",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        16
+      ],
+      "id": "f9cd0f65-54b1-4d7d-a558-6535052f8c77",
+      "name": "Daily 08:00 AM Trigger",
+      "notes": "Runs the workflow every morning to refresh daily exchange rates"
+    },
+    {
+      "parameters": {
+        "url": "https://v6.exchangerate-api.com/v6/EXCHANGE_API_KEY/latest/USD?codes=ILS,EUR,USD",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        16
+      ],
+      "id": "2c97e222-d09a-4f9d-aade-4e737c122ef9",
+      "name": "Fetch USD Base Rates",
+      "notes": "Retrieves the latest USD-based currency rates from the external API"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "enPklGzFQZ0cGYQc",
+          "mode": "list",
+          "cachedResultName": "Daily Rate",
+          "cachedResultUrl": "/projects/Hqw3eUIpDJoPku1A/datatables/enPklGzFQZ0cGYQc"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "currency",
+              "keyValue": "EUR"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "rate": "={{ $json.conversion_rates.EUR }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "rate",
+              "displayName": "rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -80
+      ],
+      "id": "722c88e3-c497-48e7-9f75-bcf94048b610",
+      "name": "Update EUR daily rate",
+      "notes": "Updates the stored EUR-to-USD exchange rate for daily use"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "enPklGzFQZ0cGYQc",
+          "mode": "list",
+          "cachedResultName": "Daily Rate",
+          "cachedResultUrl": "/projects/Hqw3eUIpDJoPku1A/datatables/enPklGzFQZ0cGYQc"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "currency",
+              "keyValue": "ILS"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "rate": "={{ $json.conversion_rates.ILS }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "rate",
+              "displayName": "rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        448,
+        112
+      ],
+      "id": "127bc93e-da85-4aee-a6fa-d411ac8a4272",
+      "name": "Update ILS daily rate",
+      "notes": "Updates the stored ILS-to-USD exchange rate for daily use"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 08:00 AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch USD Base Rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch USD Base Rates": {
+      "main": [
+        [
+          {
+            "node": "Update EUR daily rate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update ILS daily rate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update EUR daily rate": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "01659bdd-ff8d-4e6f-a4d1-527551bef9c5",
+  "meta": {
+    "instanceId": "8dc405cc3dc99b7ad1353da408649960d31f112a95d4603a1d15f6bc56a42de0"
+  },
+  "id": "6p0vv9j0gDT4hV4v",
+  "tags": []
+}
